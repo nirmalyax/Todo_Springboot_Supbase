@@ -1,0 +1,83 @@
+version: '3.8'
+
+# Docker Compose configuration for Todo Application with local PostgreSQL
+# This configuration is for development/testing purposes
+# For production, use Supabase PostgreSQL as configured in application.properties
+
+services:
+  # PostgreSQL database for local development
+  postgres:
+    image: postgres:16-alpine
+    container_name: todo-postgres
+    environment:
+      POSTGRES_DB: todo_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - todo-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  # Todo Application Service
+  todo-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: todo-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Database configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      # Application configuration
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
+      # JWT configuration
+      APP_JWT_SECRET: c68801ceae7a4eb48870e75ee65df2bd8e09b4b3e26f723c65c5ec72c0f03c59
+      APP_JWT_EXPIRATION: 86400000
+      # JVM configuration
+      JAVA_OPTS: -Xms256m -Xmx512m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - todo-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+
+# Volumes for data persistence
+volumes:
+  postgres-data:
+    name: todo-postgres-data
+
+# Networks for service communication
+networks:
+  todo-network:
+    name: todo-network
+    driver: bridge
+
