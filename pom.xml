@@ -31,7 +31,7 @@
 		<jjwt.version>0.11.5</jjwt.version>
 		<springdoc.version>2.3.0</springdoc.version>
 		<testcontainers.version>1.19.3</testcontainers.version>
-		<commons-lang3.version>3.14.0</commons-lang3.version>
+		<commons-lang3.version>3.18.0</commons-lang3.version>
 	</properties>
 	<dependencies>
 		<dependency>
